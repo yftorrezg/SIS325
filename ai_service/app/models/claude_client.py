@@ -75,7 +75,8 @@ _ASPECT_NAMES = {
 }
 
 
-def _build_tramite_context(tramite_data: Optional[dict]) -> str:
+def _build_tramite_context(tramite_data: Optional[dict], aspect: str = "GENERAL") -> str:
+    """Build a context string focused on the detected aspect to minimize token usage."""
     if not tramite_data:
         return ""
 
@@ -84,39 +85,49 @@ def _build_tramite_context(tramite_data: Optional[dict]) -> str:
         lines.append(f"Nombre: {tramite_data['name']}")
     if tramite_data.get("description"):
         lines.append(f"Descripción: {tramite_data['description']}")
-    if tramite_data.get("duration_days"):
-        lines.append(f"Duración estimada: {tramite_data['duration_days']} días hábiles")
+
+    # Always include cost and duration as they are commonly asked in follow-ups
     if tramite_data.get("cost") is not None:
         lines.append(f"Costo: Bs. {tramite_data['cost']}")
-    if tramite_data.get("applies_to"):
-        lines.append(f"Aplica a: {tramite_data['applies_to']}")
-    if tramite_data.get("location"):
-        lines.append(f"Ubicación: {tramite_data['location']}")
-    if tramite_data.get("schedule"):
-        lines.append(f"Horario: {tramite_data['schedule']}")
-    if tramite_data.get("contact_name"):
-        lines.append(f"Responsable: {tramite_data['contact_name']}")
-    if tramite_data.get("contact_phone"):
-        lines.append(f"Teléfono: {tramite_data['contact_phone']}")
+    if tramite_data.get("cost_details"):
+        lines.append(f"Detalles de pago: {tramite_data['cost_details']}")
+    if tramite_data.get("duration_days"):
+        lines.append(f"Duración estimada: {tramite_data['duration_days']} días hábiles")
+    if tramite_data.get("duration_details"):
+        lines.append(f"Detalles del plazo: {tramite_data['duration_details']}")
 
-    # Requirements
-    requirements = tramite_data.get("requirements", [])
-    if requirements:
-        lines.append("\nRequisitos/pasos:")
-        for req in sorted(requirements, key=lambda r: r.get("step_number", 0)):
-            mandatory = "" if req.get("is_mandatory", True) else " (opcional)"
-            title = req.get("title", "")
-            desc = req.get("description", "")
-            doc = req.get("document_name", "")
-            note = req.get("notes", "")
-            step = f"  {req.get('step_number', '')}. {title}{mandatory}"
-            if desc:
-                step += f": {desc}"
-            if doc:
-                step += f" [{doc}]"
-            if note:
-                step += f" — Nota: {note}"
-            lines.append(step)
+    # Aspect-specific fields
+    if aspect in ("UBICACION", "GENERAL", "CONTACTO"):
+        if tramite_data.get("office_location"):
+            lines.append(f"Ubicación: {tramite_data['office_location']}")
+    if aspect in ("CONTACTO", "GENERAL", "UBICACION"):
+        if tramite_data.get("contact_info"):
+            lines.append(f"Contacto: {tramite_data['contact_info']}")
+    if aspect in ("SISTEMA_WEB", "GENERAL", "PASOS"):
+        if tramite_data.get("web_system_url"):
+            lines.append(f"Sistema web: {tramite_data['web_system_url']}")
+        if tramite_data.get("web_instructions"):
+            lines.append(f"Instrucciones web:\n{tramite_data['web_instructions']}")
+
+    # Requirements/steps — include for REQUISITOS, PASOS, and GENERAL
+    if aspect in ("REQUISITOS", "PASOS", "GENERAL"):
+        requirements = tramite_data.get("requirements", [])
+        if requirements:
+            lines.append("\nRequisitos/pasos:")
+            for req in sorted(requirements, key=lambda r: r.get("step_number", 0)):
+                mandatory = "" if req.get("is_mandatory", True) else " (opcional)"
+                title = req.get("title", "")
+                desc = req.get("description", "")
+                doc = req.get("document_name", "")
+                note = req.get("notes", "")
+                step = f"  {req.get('step_number', '')}. {title}{mandatory}"
+                if desc:
+                    step += f": {desc}"
+                if doc:
+                    step += f" [{doc}]"
+                if note:
+                    step += f" — Nota: {note}"
+                lines.append(step)
 
     return "\n".join(lines)
 
@@ -129,7 +140,7 @@ def _build_system_prompt(
 ) -> str:
     tramite_name = _TRAMITE_NAMES.get(intent, intent)
     aspect_name = _ASPECT_NAMES.get(aspect, "información general")
-    tramite_ctx = _build_tramite_context(tramite_data)
+    tramite_ctx = _build_tramite_context(tramite_data, aspect)
 
     # Fallback: use template description if no DB data
     template_info = ""

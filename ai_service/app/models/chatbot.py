@@ -1,10 +1,11 @@
 """
 3-layer chatbot pipeline:
   Layer 1 — BERT classifier: identifies the tramite intent
-  Layer 2 — Aspect classifier: detects what aspect the user is asking about
-  Layer 3 — Claude (Haiku): generates a natural, fluid Spanish response
+  Layer 2 — Aspect classifier: what aspect is the user asking about?
+  Layer 3 — Dynamic DB response: rich structured Markdown from live tramite data
+             Claude (optional): activated per-request via claude_enabled flag
 
-Falls back to static templates if Claude is unavailable.
+No static templates — all responses come from the database.
 """
 from typing import Optional
 import httpx
@@ -14,183 +15,248 @@ from app.models.claude_client import generate_response
 from app.config import settings
 
 # ---------------------------------------------------------------------------
-# Static templates (fallback when Claude is unavailable)
+# Minimal hardcoded strings for non-tramite conversational intents only
 # ---------------------------------------------------------------------------
-TRAMITE_TEMPLATES = {
-    "TRAMITE_MATRICULA_ALUMNO_NUEVO": {
-        "greeting": "Te ayudo con la **inscripción y matriculación para estudiantes nuevos**.",
-        "description": (
-            "Este trámite es para bachilleres admitidos por preuniversitario, mejores bachilleres, mérito deportivo, olimpiadas científicas o examen de admisión.\n\n"
-            "**Documentos a subir en admision.usfx.bo:**\n"
-            "• Diploma de Bachiller legalizado por SEDUCA (anverso y reverso)\n"
-            "• Libreta de 6to de secundaria o certificado de egreso\n"
-            "• Cédula de identidad (anverso y reverso)\n"
-            "• Fotografía tipo carnet con fondo blanco\n\n"
-            "**Proceso de pago:**\n"
-            "Depositar en Banco Unión Cta. 1-33340493 (UMSFX – REC. PROPIOS – MATRÍCULAS) o pagar con QR en universitarios.usfx.bo."
-        ),
-        "cta": "¿Quieres ver el paso a paso completo del proceso de inscripción?",
-    },
-    "TRAMITE_MATRICULA_ALUMNO_REGULAR": {
-        "greeting": "Te ayudo con la **matriculación para estudiantes regulares**.",
-        "description": (
-            "Este trámite es para estudiantes que ya cursaron al menos un semestre en la USFX.\n\n"
-            "**Proceso:**\n"
-            "1. Ingresar a universitarios.usfx.bo → opción **MATRICULARME**\n"
-            "2. Generar el importe a pagar\n"
-            "3. Depositar en Banco Unión Cta. 1-33340493 o pagar con QR\n"
-            "4. Registrar número de depósito bancario en el sistema\n\n"
-            "⚠️ Si el depósito no aparece, puede tardar **hasta 4 horas** en actualizarse."
-        ),
-        "cta": "¿Necesitas ayuda con algún paso en particular?",
-    },
-    "TRAMITE_DIPLOMA_ACADEMICO": {
-        "greeting": "Te guío en el trámite del **Diploma Académico**.",
-        "description": (
-            "**Requisitos principales:**\n"
-            "• Fotocopia CI vigente\n"
-            "• Carnet universitario vigente\n"
-            "• Certificados originales de notas / kardex firmado por kardixta\n"
-            "• Certificado de Conclusión de Estudios\n"
-            "• Certificado de Nacimiento original actualizado\n"
-            "• Solvencia Universitaria (válida 48 horas desde primera firma)\n"
-            "• Fotocopia legalizada del Diploma de Bachiller\n"
-            "• Certificado de aprobación de modalidad de graduación\n"
-            "• 3 fotografías 4×4 fondo rojo, sobre, funda plástica oficio, papel valorado\n\n"
-            "**Proceso:** Ingresar a universitarios.usfx.bo → Trámites → Diploma Académico → generar formulario → presentar en Caja."
-        ),
-        "cta": "¿Quieres conocer el proceso completo en el sistema SUNIVER?",
-    },
-    "TRAMITE_TITULO_PROVISION_NACIONAL": {
-        "greeting": "Te ayudo con el trámite del **Título en Provisión Nacional**.",
-        "description": (
-            "**Requisitos:**\n"
-            "• Fotocopia legalizada del Diploma Académico\n"
-            "• Fotocopia simple del Certificado de Nacimiento\n"
-            "• Fólder universitario\n"
-            "• 3 fotografías 4×4 fondo rojo\n"
-            "• Valores universitarios\n"
-            "• Sobre para fotografías\n\n"
-            "**Proceso:** Ingresar al sistema SUNIVER (si2.usfx.bo/suniver) → Trámites Académicos → Título en Provisión Nacional → generar formulario → presentar en Caja."
-        ),
-        "cta": "¿Tienes dudas sobre algún requisito específico?",
-    },
-    "TRAMITE_SIMULTANEO_DIPLOMA_PROVISION": {
-        "greeting": "Te informo sobre el **trámite simultáneo: Diploma Académico + Título en Provisión Nacional**.",
-        "description": (
-            "Puedes obtener ambos al mismo tiempo. Requiere documentos combinados:\n\n"
-            "• Fotocopia CI, Diploma Bachiller legalizado\n"
-            "• Solvencia Universitaria (válida 48 horas)\n"
-            "• Certificado de Nacimiento original actualizado\n"
-            "• Certificados originales de notas / kardex firmado\n"
-            "• Certificado de Conclusión de Estudios\n"
-            "• Carnet universitario vigente\n"
-            "• **6 fotografías** 4×4 fondo rojo (3 por cada título)\n"
-            "• Fólder universitario, funda plástica oficio, papel valorado, sobre, valores universitarios\n\n"
-            "**Proceso:** SUNIVER → Trámites → seleccionar opción simultánea."
-        ),
-        "cta": "¿Quieres saber los costos de ambos trámites juntos?",
-    },
-    "PROCESO_MATRICULACION_WEB": {
-        "greeting": "Te explico cómo **matricularte en el sistema web de la USFX**.",
-        "description": (
-            "**Sistema:** universitarios.usfx.bo (o si2.usfx.bo/suniver)\n\n"
-            "**Pasos:**\n"
-            "1. Iniciar sesión con tu usuario y contraseña\n"
-            "2. Ir a menú **Matrículas** → **Matricularme**\n"
-            "3. Elegir modalidad de pago:\n"
-            "   • **Depósito Bancario:** deposita en Banco Unión e ingresa el número de papeleta\n"
-            "   • **Pago QR:** genera el código QR y paga (confirmación inmediata)\n"
-            "4. Verificar en Matrículas → **Mis Matrículas**\n\n"
-            "⚠️ **Importante:** No se aceptan transferencias bancarias. El depósito puede tardar hasta **4 horas** en aparecer en el sistema."
-        ),
-        "cta": "¿Tienes algún problema con el depósito o el sistema?",
-    },
-    "PROCESO_PROGRAMACION_ACADEMICA": {
-        "greeting": "Te explico cómo hacer tu **programación académica de materias**.",
-        "description": (
-            "La programación académica es donde inscribes tus materias para el semestre. **Primero debes tener matrícula vigente.**\n\n"
-            "**Pasos:**\n"
-            "1. Ingresar a si2.usfx.bo/suniver con tu usuario y contraseña\n"
-            "2. Ir al menú **Programaciones** → **Programarme**\n"
-            "3. Seguir las instrucciones según tu tipo:\n"
-            "   • **Automática:** el sistema asigna materias automáticamente\n"
-            "   • **Manual:** necesitas tu kardex de la facultad\n"
-            "4. Revisar y confirmar tu programación\n"
-            "5. Verificar en Programaciones → **Mis Programaciones**"
-        ),
-        "cta": "¿Tu carrera tiene programación automática o manual?",
-    },
-    "SEGURO_SOCIAL_UNIVERSITARIO": {
-        "greeting": "Te ayudo con el **Seguro Social Universitario Estudiantil (SSUE)**.",
-        "description": (
-            "Para recibir atención médica en el SSU necesitas una **ficha de atención médica vigente**.\n\n"
-            "**Cómo obtener tu ficha:**\n"
-            "1. Ir a ssu-sucre.org/ficha\n"
-            "2. Hacer clic en **EMITIR FICHA ESTUDIANTIL**\n"
-            "3. Ingresar tu carnet universitario y contraseña\n"
-            "4. Seleccionar la fecha de consulta\n"
-            "5. Elegir la especialidad (hay 18 disponibles)\n"
-            "6. Elegir el horario disponible y confirmar\n\n"
-            "⚠️ Es **obligatorio** presentar el Carnet Universitario en todas las atenciones."
-        ),
-        "cta": "¿Necesitas saber qué especialidades están disponibles?",
-    },
-    "SALUDO_BIENVENIDA": {
-        "greeting": "¡Hola! 👋 Bienvenido al asistente virtual de la **USFX Facultad de Tecnología**.",
-        "description": "Estoy aquí para ayudarte con trámites universitarios como matrículas, diplomas, títulos, programación académica, seguro universitario y más.",
-        "cta": "¿En qué puedo ayudarte hoy?",
-    },
-    "DESPEDIDA": {
-        "greeting": "¡Hasta luego! 👋",
-        "description": "Fue un gusto ayudarte. Si tienes más dudas sobre trámites universitarios, no dudes en volver.",
-        "cta": "¡Éxitos en tus trámites! 🎓",
-    },
-    "AGRADECIMIENTO": {
-        "greeting": "¡Con gusto! 😊",
-        "description": "Para eso estoy aquí. Si necesitas más información sobre otro trámite universitario, puedes preguntarme.",
-        "cta": "¿Hay algo más en lo que pueda ayudarte?",
-    },
-    "FALLBACK": {
-        "greeting": "No entendí completamente tu consulta 😅",
-        "description": (
-            "Puedo ayudarte con:\n"
-            "• **Matrícula** (nuevo ingreso o regular)\n"
-            "• **Diploma Académico** y **Título en Provisión Nacional**\n"
-            "• **Programación académica** de materias\n"
-            "• **Seguro Social Universitario** (SSUE)\n"
-            "• Proceso de matriculación en el **sistema web**"
-        ),
-        "cta": "¿Podrías reformular tu pregunta o elegir uno de los temas de arriba?",
-    },
+NON_TRAMITE_RESPONSES = {
+    "SALUDO_BIENVENIDA": (
+        "¡Hola! 👋 Soy el asistente virtual de la **Facultad de Tecnología USFX**.\n\n"
+        "Puedo ayudarte con:\n"
+        "• 🎓 Matrícula (nuevo ingreso o regular)\n"
+        "• 📜 Diploma Académico y Título en Provisión Nacional\n"
+        "• 🔄 Cambio de carrera o carrera simultánea\n"
+        "• 🏆 Titulación (proceso de graduación)\n"
+        "• 📋 Certificado académico / Kardex\n"
+        "• 🌐 Matriculación y programación en el sistema web\n"
+        "• 💊 Seguro Social Universitario\n"
+        "• 🎫 Becas, carnet universitario, reprogramaciones\n\n"
+        "¿Sobre qué trámite querés consultar?"
+    ),
+    "DESPEDIDA": "¡Hasta luego! 👋 Fue un gusto ayudarte. ¡Éxitos en tus trámites! 🎓",
+    "AGRADECIMIENTO": "¡Con gusto! 😊 Si tenés más consultas sobre trámites, estoy aquí para ayudarte.",
+    "FALLBACK": (
+        "No entendí del todo tu consulta 😅\n\n"
+        "Podés preguntarme sobre:\n"
+        "• **Matrícula** — nueva o regular\n"
+        "• **Diploma Académico** o **Título en Provisión Nacional**\n"
+        "• **Cambio de carrera** o **carrera simultánea**\n"
+        "• **Titulación** (proceso de graduación)\n"
+        "• **Kardex** / certificado académico\n"
+        "• **Sistema web** (SUNIVER / universitarios.usfx.bo)\n"
+        "• **Programación académica** de materias\n"
+        "• **Seguro Social** universitario\n"
+        "• **Becas**, **carnet**, **reprogramaciones**, **homologaciones**\n\n"
+        "¿Podrías reformular tu pregunta o elegir uno de los temas de arriba?"
+    ),
 }
 
+NON_TRAMITE_INTENTS = set(NON_TRAMITE_RESPONSES.keys())
 CONFIDENCE_THRESHOLD = 0.15
-NON_TRAMITE_INTENTS = ("SALUDO_BIENVENIDA", "DESPEDIDA", "AGRADECIMIENTO", "FALLBACK")
-
-# Intents that Claude should also handle (richer conversational responses)
-CLAUDE_ENABLED_INTENTS = (
-    "SALUDO_BIENVENIDA", "AGRADECIMIENTO", "DESPEDIDA", "FALLBACK"
-)
 
 
-def _build_static_response(intent: str, confidence: float, tramite_data: Optional[dict]) -> dict:
-    """Build the static template response (used as fallback)."""
-    template = TRAMITE_TEMPLATES.get(intent, TRAMITE_TEMPLATES["FALLBACK"])
-    is_low_confidence = confidence < CONFIDENCE_THRESHOLD
+# ---------------------------------------------------------------------------
+# Dynamic response builder — uses live DB data, no hardcoded text
+# ---------------------------------------------------------------------------
 
-    if is_low_confidence:
-        response = (
-            "No entendí completamente tu consulta 😅 ¿Podrías ser más específico?\n\n"
-            "Puedo ayudarte con:\n"
-            "• Matrícula (nuevo ingreso o regular)\n"
-            "• Diploma Académico y Título en Provisión Nacional\n"
-            "• Programación académica de materias\n"
-            "• Proceso de matriculación en el sistema web\n"
-            "• Seguro Social Universitario (SSUE)"
-        )
+def _build_aspect_response(intent: str, aspect: str, tramite_data: dict, confidence: float) -> dict:
+    """Build a rich Markdown response from DB data focused on the detected aspect."""
+    name = tramite_data.get("name", intent)
+    tramite_id = tramite_data.get("id")
+    parts = []
+
+    # Medium confidence: add a clarification note so the user knows what we understood
+    if confidence < 0.55:
+        parts.append(f"*Entendí que preguntás sobre **{name}***\n")
+
+    if aspect == "COSTO":
+        cost = float(tramite_data.get("cost") or 0)
+        cost_details = tramite_data.get("cost_details")
+        if cost == 0:
+            parts.append(f"💰 **{name}** es completamente **gratuito**, no requiere pago.")
+        else:
+            parts.append(f"💰 El costo del **{name}** es **Bs. {cost:.2f}**.")
+        if cost_details:
+            parts.append(f"\n{cost_details}")
+
+    elif aspect == "PLAZO":
+        duration = tramite_data.get("duration_days")
+        duration_details = tramite_data.get("duration_details")
+        if duration:
+            parts.append(f"⏱ El **{name}** tarda aproximadamente **{duration} días hábiles**.")
+        if duration_details:
+            parts.append(f"\n{duration_details}")
+        if not duration and not duration_details:
+            parts.append(
+                f"⏱ No tengo el plazo exacto registrado para **{name}**. "
+                "Te recomiendo consultar directamente con tu kardista."
+            )
+
+    elif aspect == "UBICACION":
+        office = tramite_data.get("office_location")
+        if office:
+            parts.append(f"📍 **¿Dónde realizar el {name}?**\n\n{office}")
+        else:
+            parts.append(
+                f"📍 Debés presentarte al **kardista de tu carrera** en la Facultad de Tecnología USFX.\n\n"
+                "Podés ver el contacto y ubicación en la sección **Kardistas** de la plataforma."
+            )
+
+    elif aspect == "CONTACTO":
+        contact = tramite_data.get("contact_info")
+        if contact:
+            parts.append(f"📞 **Contacto para {name}:**\n\n{contact}")
+        else:
+            parts.append(
+                f"📞 Para este trámite, contactá al **kardista de tu carrera**. "
+                "Podés ver el teléfono y horario en la sección **Kardistas** de esta plataforma."
+            )
+
+    elif aspect == "SISTEMA_WEB":
+        url = tramite_data.get("web_system_url")
+        instructions = tramite_data.get("web_instructions")
+        if url or instructions:
+            if url:
+                parts.append(f"🌐 **Sistema web:** {url}\n")
+            if instructions:
+                parts.append(f"**Instrucciones paso a paso:**\n\n{instructions}")
+        else:
+            parts.append(
+                f"🌐 El **{name}** no se gestiona en línea. "
+                "Debés presentarte personalmente con la documentación requerida."
+            )
+
+    elif aspect == "REQUISITOS":
+        reqs = sorted(tramite_data.get("requirements", []), key=lambda r: r.get("step_number", 0))
+        mandatory = [r for r in reqs if r.get("is_mandatory", True)]
+        optional_reqs = [r for r in reqs if not r.get("is_mandatory", True)]
+        if mandatory:
+            parts.append(f"📋 **Documentos necesarios — {name}:**\n")
+            for r in mandatory:
+                line = f"• **{r['title']}**"
+                if r.get("description") and r["description"] != r["title"]:
+                    line += f" — {r['description']}"
+                if r.get("document_name"):
+                    line += f" `[{r['document_name']}]`"
+                if r.get("notes"):
+                    line += f"\n  ⚠️ *{r['notes']}*"
+                parts.append(line)
+        if optional_reqs:
+            parts.append(f"\n📎 **Opcionales:**")
+            for r in optional_reqs:
+                parts.append(f"• {r['title']}")
+        if not reqs:
+            parts.append(
+                f"📋 No tengo los requisitos específicos registrados para **{name}**. "
+                "Consultá con tu kardista."
+            )
+
+    elif aspect == "PASOS":
+        reqs = sorted(tramite_data.get("requirements", []), key=lambda r: r.get("step_number", 0))
+        web = tramite_data.get("web_instructions")
+        if reqs:
+            parts.append(f"📝 **Proceso paso a paso — {name}:**\n")
+            for r in reqs:
+                step = f"**{r.get('step_number', '')}. {r['title']}**"
+                if r.get("description") and r["description"] != r["title"]:
+                    step += f"\n   {r['description']}"
+                if r.get("notes"):
+                    step += f"\n   ⚠️ *{r['notes']}*"
+                parts.append(step)
+        if web and not reqs:
+            parts.append(f"🌐 **En el sistema web:**\n\n{web}")
+        if not reqs and not web:
+            parts.append(
+                f"📝 No tengo los pasos específicos registrados para **{name}**. "
+                "Consultá con tu kardista."
+            )
+
+    else:  # GENERAL
+        desc = tramite_data.get("description", "")
+        cost = float(tramite_data.get("cost") or 0)
+        duration = tramite_data.get("duration_days")
+        reqs = tramite_data.get("requirements", [])
+
+        parts.append(f"ℹ️ **{name}**\n")
+        if desc:
+            parts.append(f"{desc}\n")
+
+        stat_parts = []
+        if duration:
+            stat_parts.append(f"⏱ {duration} días hábiles")
+        stat_parts.append(f"💰 {'Gratuito' if cost == 0 else f'Bs. {cost:.2f}'}")
+        parts.append(" · ".join(stat_parts))
+
+        if reqs:
+            parts.append(
+                f"\n💬 Podés preguntarme por los **requisitos**, el **costo**, "
+                "el **proceso paso a paso**, el **plazo** o **dónde** realizarlo."
+            )
+
+    response = "\n\n".join(p for p in parts if p)
+    return {
+        "response": response,
+        "classified_intent": intent,
+        "tramite_id": str(tramite_id) if tramite_id else None,
+        "confidence": confidence,
+        "step": 1,
+        "show_tramite_card": True,
+    }
+
+
+def _fallback_response(intent: str, confidence: float) -> dict:
+    return {
+        "response": NON_TRAMITE_RESPONSES["FALLBACK"],
+        "classified_intent": intent,
+        "tramite_id": None,
+        "confidence": confidence,
+        "step": None,
+        "show_tramite_card": False,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Main pipeline
+# ---------------------------------------------------------------------------
+
+async def process_chat(
+    session_id: str,
+    message: str,
+    history: list,
+    claude_enabled: bool = False,
+) -> dict:
+    """
+    Main chatbot pipeline:
+      1. BERT → classify intent
+      2. Aspect classifier → detect what the user is asking about
+      3a. Claude (if claude_enabled=True) → natural language response
+      3b. Dynamic DB response (default) → rich structured Markdown
+    """
+    # --- Layer 1: Intent classification ---
+    result = classifier_model.predict(message)
+    intent = result["label"]
+    confidence = result["confidence"]
+
+    # Conversational intents → quick response, no DB needed
+    if intent in NON_TRAMITE_INTENTS:
+        if claude_enabled:
+            claude_resp = await generate_response(
+                intent=intent,
+                aspect="GENERAL",
+                user_message=message,
+                history=history,
+                tramite_data=None,
+                tramite_template={"description": NON_TRAMITE_RESPONSES.get(intent, "")},
+            )
+            if claude_resp:
+                return {
+                    "response": claude_resp,
+                    "classified_intent": intent,
+                    "tramite_id": None,
+                    "confidence": confidence,
+                    "step": None,
+                    "show_tramite_card": False,
+                }
         return {
-            "response": response,
+            "response": NON_TRAMITE_RESPONSES.get(intent, NON_TRAMITE_RESPONSES["FALLBACK"]),
             "classified_intent": intent,
             "tramite_id": None,
             "confidence": confidence,
@@ -198,90 +264,55 @@ def _build_static_response(intent: str, confidence: float, tramite_data: Optiona
             "show_tramite_card": False,
         }
 
-    tramite_id = tramite_data.get("id") if tramite_data else None
-    response_parts = [
-        template["greeting"],
-        "",
-        template["description"],
-        "",
-        template["cta"],
-    ]
-
-    if tramite_data:
-        response_parts.extend([
-            "",
-            f"⏱ Tiempo estimado: {tramite_data.get('duration_days', '?')} días hábiles",
-            f"💰 Costo: Bs. {tramite_data.get('cost', '0.00')}",
-        ])
-
-    return {
-        "response": "\n".join(response_parts),
-        "classified_intent": intent,
-        "tramite_id": str(tramite_id) if tramite_id else None,
-        "confidence": confidence,
-        "step": 1,
-        "show_tramite_card": intent not in NON_TRAMITE_INTENTS,
-    }
-
-
-async def process_chat(session_id: str, message: str, history: list) -> dict:
-    """
-    Main chatbot pipeline — 3 layers:
-      1. BERT: classify intent (tramite)
-      2. Aspect classifier: what is the user asking about?
-      3. Claude: generate natural response using tramite data + aspect + history
-    """
-    # --- Layer 1: Intent classification ---
-    result = classifier_model.predict(message)
-    intent = result["label"]
-    confidence = result["confidence"]
-
-    # Low confidence → fallback immediately (no point calling Claude)
+    # Low confidence → general fallback
     if confidence < CONFIDENCE_THRESHOLD:
-        return _build_static_response(intent, confidence, None)
+        return _fallback_response(intent, confidence)
 
-    # --- Fetch tramite data from backend (for tramite-specific intents) ---
+    # --- Fetch full tramite data from backend ---
     tramite_data = None
-    if intent not in NON_TRAMITE_INTENTS:
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get(
-                    f"{settings.backend_url}/api/v1/tramites",
-                    params={"is_active": True},
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            list_resp = await client.get(f"{settings.backend_url}/api/v1/tramites")
+            if list_resp.status_code == 200:
+                summary = next(
+                    (t for t in list_resp.json() if t.get("code") == intent), None
                 )
-                if resp.status_code == 200:
-                    tramites = resp.json()
-                    tramite_data = next(
-                        (t for t in tramites if t.get("code") == intent), None
+                if summary:
+                    detail_resp = await client.get(
+                        f"{settings.backend_url}/api/v1/tramites/{summary['id']}"
                     )
-        except Exception:
-            pass
+                    if detail_resp.status_code == 200:
+                        tramite_data = detail_resp.json()
+                    else:
+                        tramite_data = summary
+    except Exception:
+        pass
+
+    if not tramite_data:
+        return _fallback_response(intent, confidence)
 
     # --- Layer 2: Aspect classification ---
     aspect = classify_aspect(message)
 
-    # --- Layer 3: Claude response ---
-    template = TRAMITE_TEMPLATES.get(intent, TRAMITE_TEMPLATES["FALLBACK"])
-    claude_response = await generate_response(
-        intent=intent,
-        aspect=aspect,
-        user_message=message,
-        history=history,
-        tramite_data=tramite_data,
-        tramite_template=template,
-    )
+    # --- Layer 3a: Claude (if enabled) ---
+    if claude_enabled:
+        claude_resp = await generate_response(
+            intent=intent,
+            aspect=aspect,
+            user_message=message,
+            history=history,
+            tramite_data=tramite_data,
+        )
+        if claude_resp:
+            tramite_id = tramite_data.get("id")
+            return {
+                "response": claude_resp,
+                "classified_intent": intent,
+                "tramite_id": str(tramite_id) if tramite_id else None,
+                "confidence": confidence,
+                "step": 1,
+                "show_tramite_card": True,
+            }
 
-    # If Claude succeeded, return its response
-    if claude_response:
-        tramite_id = tramite_data.get("id") if tramite_data else None
-        return {
-            "response": claude_response,
-            "classified_intent": intent,
-            "tramite_id": str(tramite_id) if tramite_id else None,
-            "confidence": confidence,
-            "step": 1,
-            "show_tramite_card": intent not in NON_TRAMITE_INTENTS,
-        }
-
-    # --- Fallback: static template ---
-    return _build_static_response(intent, confidence, tramite_data)
+    # --- Layer 3b: Dynamic DB response ---
+    return _build_aspect_response(intent, aspect, tramite_data, confidence)

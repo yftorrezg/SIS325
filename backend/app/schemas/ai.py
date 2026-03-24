@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     history: Optional[List[ChatMessage]] = []
+    claude_enabled: bool = False
 
 
 class ChatResponse(BaseModel):

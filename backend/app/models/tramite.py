@@ -23,6 +23,14 @@ class Tramite(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Aspect-specific fields (used by Claude to answer focused questions)
+    office_location: Mapped[str] = mapped_column(String(255), nullable=True)    # UBICACION aspect
+    contact_info: Mapped[str] = mapped_column(String(255), nullable=True)       # CONTACTO aspect
+    cost_details: Mapped[str] = mapped_column(Text, nullable=True)              # COSTO aspect (payment instructions)
+    duration_details: Mapped[str] = mapped_column(Text, nullable=True)          # PLAZO aspect (extra timing info)
+    web_system_url: Mapped[str] = mapped_column(String(255), nullable=True)     # SISTEMA_WEB aspect
+    web_instructions: Mapped[str] = mapped_column(Text, nullable=True)          # SISTEMA_WEB aspect (step-by-step)
+
     requirements: Mapped[list["Requirement"]] = relationship("Requirement", back_populates="tramite", order_by="Requirement.step_number", cascade="all, delete-orphan")
     requests: Mapped[list["StudentRequest"]] = relationship("StudentRequest", back_populates="tramite")
 

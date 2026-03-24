@@ -34,6 +34,12 @@ class TramiteBase(BaseModel):
     applies_to: str = "all"
     order_index: int = 0
     icon: Optional[str] = None
+    office_location: Optional[str] = None
+    contact_info: Optional[str] = None
+    cost_details: Optional[str] = None
+    duration_details: Optional[str] = None
+    web_system_url: Optional[str] = None
+    web_instructions: Optional[str] = None
 
 
 class TramiteCreate(TramiteBase):
@@ -50,6 +56,12 @@ class TramiteUpdate(BaseModel):
     order_index: Optional[int] = None
     icon: Optional[str] = None
     is_active: Optional[bool] = None
+    office_location: Optional[str] = None
+    contact_info: Optional[str] = None
+    cost_details: Optional[str] = None
+    duration_details: Optional[str] = None
+    web_system_url: Optional[str] = None
+    web_instructions: Optional[str] = None
 
 
 class TramiteOut(TramiteBase):

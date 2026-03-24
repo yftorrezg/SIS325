@@ -2,6 +2,7 @@
 BERT-based text classifier for tramite intent detection.
 Uses dccuchile/bert-base-spanish-wwm-cased fine-tuned on tramite utterances.
 Falls back to keyword-based classification if model not loaded.
+20 labels: 16 tramites + 4 conversational intents.
 """
 import json
 import asyncio
@@ -14,40 +15,131 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 TRAMITE_LABELS = [
+    # Matrícula
     "TRAMITE_MATRICULA_ALUMNO_NUEVO",
     "TRAMITE_MATRICULA_ALUMNO_REGULAR",
+    # Titulación
     "TRAMITE_DIPLOMA_ACADEMICO",
     "TRAMITE_TITULO_PROVISION_NACIONAL",
     "TRAMITE_SIMULTANEO_DIPLOMA_PROVISION",
+    "TRAMITE_TITULACION",
+    # Certificados y trámites académicos
+    "SOLICITUD_CERTIFICADO_KARDEX",
+    "SOLICITUD_CAMBIO_CARRERA",
+    "SOLICITUD_CARRERA_SIMULTANEA",
+    "SOLICITUD_REPROGRAMACIONES",
+    "SOLICITUD_HOMOLOGACION_MATERIAS",
+    # Bienestar e identificación
+    "TRAMITE_BECAS",
+    "CARNET_UNIVERSITARIO",
+    "SEGURO_SOCIAL_UNIVERSITARIO",
+    # Procesos en sistema web
     "PROCESO_MATRICULACION_WEB",
     "PROCESO_PROGRAMACION_ACADEMICA",
-    "SEGURO_SOCIAL_UNIVERSITARIO",
+    # Conversacionales
     "SALUDO_BIENVENIDA",
     "DESPEDIDA",
     "AGRADECIMIENTO",
     "FALLBACK",
 ]
 
-# Keyword fallback for when model is not available
-KEYWORD_MAP = {
-    "TRAMITE_MATRICULA_ALUMNO_NUEVO": ["nuevo", "bachiller", "primera vez", "admitido", "admision", "admisión", "preuniversitario", "inscribirme por primera", "ingreso"],
-    "TRAMITE_MATRICULA_ALUMNO_REGULAR": ["renovar matricula", "matricula regular", "semestre", "matrícula", "matricularme", "pagar semestre", "banco union", "deposito matricula"],
-    "TRAMITE_DIPLOMA_ACADEMICO": ["diploma academico", "diploma académico", "sacar diploma", "tramite diploma", "requisitos diploma", "solvencia universitaria", "certificado conclusión"],
-    "TRAMITE_TITULO_PROVISION_NACIONAL": ["titulo provision", "título provisión", "provision nacional", "título profesional", "tramite titulo", "titulo en provision"],
-    "TRAMITE_SIMULTANEO_DIPLOMA_PROVISION": ["simultaneo", "simultáneo", "diploma y titulo", "los dos", "ambos tramites", "diploma y provisión", "al mismo tiempo"],
-    "PROCESO_MATRICULACION_WEB": ["universitarios.usfx", "si2.usfx", "suniver", "numero deposito", "número de depósito", "qr matricula", "sistema web", "no carga", "papeleta"],
-    "PROCESO_PROGRAMACION_ACADEMICA": ["programarme", "programacion", "programación", "materias", "inscribir materias", "seleccionar materias", "mis programaciones"],
-    "SEGURO_SOCIAL_UNIVERSITARIO": ["seguro social", "ssu", "seguro médico", "seguro universitario", "ficha medica", "ficha médica", "atencion medica", "ssu-sucre"],
-    "SALUDO_BIENVENIDA": ["hola", "buenos días", "buenas tardes", "buenas noches", "buenas", "hey", "holi", "necesito ayuda", "alguien"],
-    "DESPEDIDA": ["adiós", "adios", "hasta luego", "chau", "bye", "hasta pronto", "nos vemos", "ya fue", "ya me voy"],
-    "AGRADECIMIENTO": ["gracias", "muchas gracias", "grax", "thx", "grasias", "agradecido", "se agradece", "mil gracias"],
+# Keyword fallback — used when no fine-tuned model is available
+KEYWORD_MAP: dict[str, list[str]] = {
+    "TRAMITE_MATRICULA_ALUMNO_NUEVO": [
+        "nuevo", "bachiller", "primera vez", "admitido", "admisión", "admision",
+        "preuniversitario", "primer ingreso", "ingreso nuevo", "inscribirme por primera",
+        "recién bachiller", "acabo de salir del colegio", "entrar a la usfx",
+    ],
+    "TRAMITE_MATRICULA_ALUMNO_REGULAR": [
+        "renovar matrícula", "matrícula regular", "matricularme", "pagar semestre",
+        "banco unión matrícula", "depósito matrícula", "renovar inscripción",
+        "ya soy alumno", "matrícula semestre", "volver a matricularme",
+    ],
+    "TRAMITE_DIPLOMA_ACADEMICO": [
+        "diploma académico", "diploma academico", "sacar diploma", "trámite diploma",
+        "requisitos diploma", "solvencia universitaria", "certificado conclusión",
+        "terminé la carrera diploma", "obtener diploma",
+    ],
+    "TRAMITE_TITULO_PROVISION_NACIONAL": [
+        "título provisión", "titulo provision", "provisión nacional", "título profesional",
+        "trámite título", "titulo en provision", "título en provisión",
+    ],
+    "TRAMITE_SIMULTANEO_DIPLOMA_PROVISION": [
+        "simultáneo", "simultaneo", "diploma y título", "los dos", "ambos trámites",
+        "diploma y provisión", "al mismo tiempo", "trámite simultáneo",
+    ],
+    "TRAMITE_TITULACION": [
+        "titulación", "titulacion", "graduarme", "proceso de graduación", "modalidad de titulación",
+        "tesis", "proyecto de grado", "examen de grado", "trabajo dirigido",
+        "terminé todas las materias graduación", "obtener título graduación",
+    ],
+    "SOLICITUD_CERTIFICADO_KARDEX": [
+        "kardex", "certificado de notas", "historial académico", "certificado académico",
+        "notas oficiales", "solicitar kardex", "pedir certificado", "record académico",
+        "constancia de notas", "certificado de estudios",
+    ],
+    "SOLICITUD_CAMBIO_CARRERA": [
+        "cambio de carrera", "cambiar de carrera", "cambiarme de carrera",
+        "pasar a otra carrera", "transferirme de carrera", "quiero cambiarme",
+        "solicitud cambio carrera",
+    ],
+    "SOLICITUD_CARRERA_SIMULTANEA": [
+        "carrera simultánea", "simultanea", "doble carrera", "dos carreras",
+        "estudiar dos carreras", "segunda carrera", "carrera al mismo tiempo",
+    ],
+    "SOLICITUD_REPROGRAMACIONES": [
+        "reprogramación", "reprogramar examen", "faltei al examen", "falté al examen",
+        "justificar falta", "reprogramar parcial", "no pude dar el examen",
+        "ausencia examen", "reprogramar final",
+    ],
+    "SOLICITUD_HOMOLOGACION_MATERIAS": [
+        "homologación", "homologar", "equivalencia", "materias equivalentes",
+        "reconocer materias", "validar materias", "homologación de materias",
+        "materias de otra universidad", "equivalencias académicas",
+    ],
+    "TRAMITE_BECAS": [
+        "beca", "becas", "beca universitaria", "beca por mérito", "beca académica",
+        "beca económica", "solicitar beca", "convocatoria becas", "apoyo económico",
+    ],
+    "CARNET_UNIVERSITARIO": [
+        "carnet universitario", "carnet estudiantil", "reponer carnet", "perdí mi carnet",
+        "renovar carnet", "carne universitario", "identificación estudiantil",
+        "carnet usfx", "credencial universitaria",
+    ],
+    "SEGURO_SOCIAL_UNIVERSITARIO": [
+        "seguro social", "ssu", "seguro médico", "seguro universitario",
+        "ficha médica", "ficha medica", "atención médica", "ssu-sucre",
+        "cita médica", "atenderme en el seguro",
+    ],
+    "PROCESO_MATRICULACION_WEB": [
+        "universitarios.usfx", "si2.usfx", "suniver", "número de depósito",
+        "numero de deposito", "qr matrícula", "sistema web matrícula",
+        "pago qr", "papeleta depósito", "no carga el sistema",
+    ],
+    "PROCESO_PROGRAMACION_ACADEMICA": [
+        "programarme", "programación académica", "programacion", "inscribir materias",
+        "seleccionar materias", "mis programaciones", "programación de materias",
+        "programación manual", "programación automática",
+    ],
+    "SALUDO_BIENVENIDA": [
+        "hola", "buenos días", "buenas tardes", "buenas noches", "buenas",
+        "hey", "necesito ayuda", "alguien me puede ayudar", "buen día",
+    ],
+    "DESPEDIDA": [
+        "adiós", "adios", "hasta luego", "chau", "bye", "hasta pronto",
+        "nos vemos", "ya fue", "ya me voy",
+    ],
+    "AGRADECIMIENTO": [
+        "gracias", "muchas gracias", "grax", "agradecido", "se agradece",
+        "mil gracias", "muy amable", "excelente gracias",
+    ],
 }
 
 
 def keyword_classify(text: str) -> tuple[str, float]:
     """Fallback keyword-based classification."""
     text_lower = text.lower()
-    scores = {}
+    scores: dict[str, int] = {}
     for label, keywords in KEYWORD_MAP.items():
         score = sum(1 for kw in keywords if kw in text_lower)
         if score > 0:
@@ -70,7 +162,7 @@ class ClassifierModel:
         self._device = "cuda" if (settings.use_gpu and torch.cuda.is_available()) else "cpu"
 
     async def load(self):
-        """Load fine-tuned model if available, otherwise prepare for training."""
+        """Load fine-tuned model if available, otherwise use keyword fallback."""
         active_path = settings.classifier_active_path
         if active_path.exists() and (active_path / "config.json").exists():
             await asyncio.get_event_loop().run_in_executor(None, self._load_from_disk, str(active_path))
@@ -87,7 +179,6 @@ class ClassifierModel:
             self._model = AutoModelForSequenceClassification.from_pretrained(model_path)
             self._model.to(self._device)
             self._model.eval()
-            # Read version
             version_file = Path(model_path) / "version.txt"
             self.current_version = version_file.read_text().strip() if version_file.exists() else "unknown"
             self.is_loaded = True
@@ -115,12 +206,17 @@ class ClassifierModel:
             }
 
         with torch.no_grad():
-            inputs = self._tokenizer(text, return_tensors="pt", truncation=True, max_length=128, padding=True)
+            inputs = self._tokenizer(
+                text, return_tensors="pt", truncation=True, max_length=128, padding=True
+            )
             inputs = {k: v.to(self._device) for k, v in inputs.items()}
             outputs = self._model(**inputs)
             probs = torch.softmax(outputs.logits, dim=-1).squeeze().cpu().tolist()
 
-        scored = sorted([(self._id2label[i], p) for i, p in enumerate(probs)], key=lambda x: -x[1])
+        scored = sorted(
+            [(self._id2label[i], p) for i, p in enumerate(probs)],
+            key=lambda x: -x[1],
+        )
         return {
             "label": scored[0][0],
             "confidence": scored[0][1],
@@ -129,7 +225,7 @@ class ClassifierModel:
         }
 
     def swap_model(self, new_model_path: str, version_tag: str):
-        """Hot-swap to newly trained model."""
+        """Hot-swap to a newly trained model."""
         old_model = self._model
         old_tokenizer = self._tokenizer
         try:

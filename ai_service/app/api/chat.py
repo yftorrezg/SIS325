@@ -15,6 +15,7 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     history: Optional[List[ChatMessage]] = []
+    claude_enabled: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -29,5 +30,10 @@ class ChatResponse(BaseModel):
 @router.post("/chat", response_model=ChatResponse)
 async def chat(data: ChatRequest):
     history = [{"role": m.role, "content": m.content} for m in (data.history or [])]
-    result = await process_chat(data.session_id, data.message, history)
+    result = await process_chat(
+        data.session_id,
+        data.message,
+        history,
+        claude_enabled=data.claude_enabled,
+    )
     return ChatResponse(**result)

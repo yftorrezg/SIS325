@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     internal_api_key: str = "usfx-internal-ai-key-2024"
     claude_api_key: str = ""
+    use_zero_shot_classifier: bool = False
 
     @property
     def classifier_path(self) -> Path:
