@@ -1,0 +1,17 @@
+8. SEGURO_SOCIAL_UNIVERSITARIO: 
+  Para ser atendido debe estar afiliado al Seguro Social Universitario Estudiantil (SSUE) y contar con su ficha de atención médica vigente. Para obtener la ficha de atención médica, siga los siguientes pasos:
+
+  -Acceder a la pagina web del seguro social universitario (https://www.ssu-sucre.org/inicio)
+  -Haga clic en el botón «Adquirir ficha», o siga este enlace (https://www.ssu-sucre.org/ficha).
+  -Haga clic en <<EMITIR FICHA ESTUDIANTIL>>
+  -Complete el formulario con sus datos personales, incluyendo su número de carnet universitario.
+    EMISION DE FICHA DE ATENCION MEDICA SSUE
+      Canet Universitario:*Ingrese su Carnet Universitario
+      Contraseña:*Contraseña
+      Fecha Consulta:*igrese la fecha de su consulta médica
+
+  -Hay 18 Especialidades Eliga la expecialidad
+  -Finalmente, elija el horario de atención médica que más le convenga y este disponible y confirme su cita.
+  La presentación del Carnet Universitario de Asegurado es obligatoria para ser atendido en cualquiera de los servicios.
+
+

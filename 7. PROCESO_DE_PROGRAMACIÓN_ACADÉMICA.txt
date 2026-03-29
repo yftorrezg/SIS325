@@ -1,0 +1,22 @@
+7. PROCESO_DE_PROGRAMACIÓN_ACADÉMICA
+
+  Primeramente tienes que haber realizado tu matrícula para poder acceder al proceso de programación académica.
+  Entrar al sistema (https://si2.usfx.bo/suniver/web/Cuenta/security/login)
+  Ingresa con tu usuario y contraseña asignados.
+
+  En la seccion de la derecha, haz clic en el menú «Programaciones» y selecciona el submenú «Programarme».
+  Revisar el tipo de programación
+  En algunas carreras, la programación de materias es automática.
+  Si tu carrera requiere programación manual, con el correspondiente kardex de tu facultad.
+  
+  Programación automatica:
+  Ingresar al menú de Programaciones
+  Ve al menú «Programaciones» y selecciona el submenú «Programarme».
+  Sigue las instrucciones que te dará el sistema paso a paso.
+  Finalizar la programación
+  Revisa cuidadosamente la información antes de confirmar.
+  Una vez completada, tu programación estará registrada en el sistema.
+  Verificación de la programación
+  Puedes corroborar tu matrícula en el menú «Programaciones», submenú «Mis Programaciones «.
+
+  contacto: Soporte Tecnicodtic.soporte@usfx.bo 

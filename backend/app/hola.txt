@@ -1,0 +1,32 @@
+("cual es la pagina para solicitar reprogramación de materias", "SOLICITUD_REPROGRAMACIONES"),
+("donde presento solicitud de reprogramación con el kardista", "SOLICITUD_REPROGRAMACIONES"),
+("plataforma para gestionar cambios de programación", "SOLICITUD_REPROGRAMACIONES"),
+--- Instrucciones / Pasos para solicitar reprogramación ---
+("como solicito reprogramación de materias con el kardista", "SOLICITUD_REPROGRAMACIONES"),
+("pasos para pedir cambio de materias programadas", "SOLICITUD_REPROGRAMACIONES"),
+("que hago paso a paso para reprogramar una materia", "SOLICITUD_REPROGRAMACIONES"),
+("tutorial de solicitud de reprogramación académica", "SOLICITUD_REPROGRAMACIONES"),
+--- Duración / Tiempo / Plazos ---
+("cuanto tarda el kardista en responder mi solicitud de reprogramación", "SOLICITUD_REPROGRAMACIONES"),
+("cuanto demora la reprogramacion", "SOLICITUD_REPROGRAMACIONES"),
+("cuanto tiempo tengo para solicitar reprogramación de materias", "SOLICITUD_REPROGRAMACIONES"),
+("el plazo para pedir reprogramación hasta cuando es", "SOLICITUD_REPROGRAMACIONES"),
+("solicitar reprogramación de materias", "SOLICITUD_REPROGRAMACIONES"),
+("plazo para pedir cambio de materias programadas", "SOLICITUD_REPROGRAMACIONES"),
+--- Requisitos / Documentación ---
+("que necesito para solicitar reprogramación de materias", "SOLICITUD_REPROGRAMACIONES"),
+("requisitos para pedir cambio de programación con el kardista", "SOLICITUD_REPROGRAMACIONES"),
+("pasos para solicitud de reprogramación", "SOLICITUD_REPROGRAMACIONES"),
+--- Contacto con Kardista / Asesor académico ---
+("como contacto al kardista para mi solicitud de reprogramación", "SOLICITUD_REPROGRAMACIONES"),
+("telefono de la oficina de kardex para reprogramaciones", "SOLICITUD_REPROGRAMACIONES"),
+("whatsapp del kardista para consultas de reprogramación", "SOLICITUD_REPROGRAMACIONES"),
+("contacto para enviar solicitud de reprogramación al kardista", "SOLICITUD_REPROGRAMACIONES"),
+("donde encuentro al kardista de mi carrera para tramitar", "SOLICITUD_REPROGRAMACIONES"),
+("horario de atención del kardista para solicitudes académicas", "SOLICITUD_REPROGRAMACIONES"),
+
+--- Video tutorial / Guías ---
+("video de reprogramación de materias", "SOLICITUD_REPROGRAMACIONES"),
+("video explicativo paso a paso de reprogramación académica", "SOLICITUD_REPROGRAMACIONES"),
+("video de como pedir cambio de materias", "SOLICITUD_REPROGRAMACIONES"),
+("video de como usar el sistema de reprogramaciones", "SOLICITUD_REPROGRAMACIONES"),

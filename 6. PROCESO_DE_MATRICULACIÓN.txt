@@ -1,0 +1,18 @@
+6. PROCESO_DE_MATRICULACIÓN
+
+  Acceder al sistema (https://si2.usfx.bo/suniver/web/Cuenta/security/login)
+  Ingresa con tu usuario y contraseña asignados.
+  Acceder al sistema
+  Dirígete al menú «Matrículas» y selecciona el submenú «Matricularme».
+  Se mostrarán las modalidades disponibles para tu matriculación.
+  Seleccionar la modalidad de pago
+  Depósito Bancario: Realiza un depósito en el Banco Unión y registra el código de la papeleta en el sistema.
+  Pago QR: Genera un código QR en el sistema, el cual contiene un código de pago. Al realizar el pago, el sistema lo procesará automáticamente.
+  ⚠ Importante: No se aceptan transferencias bancarias, ya que son diferentes al pago QR.
+  
+
+  Confirmación del pago
+  Si optaste por Depósito Bancario, el sistema puede indicarte que intentes nuevamente después de 4 horas si la transacción aún no se ha actualizado.
+  Si utilizaste Pago QR, la confirmación es inmediata.
+  Verificación de la matrícula
+  Puedes corroborar tu matrícula en el menú «Matrículas», submenú «Mis Matrículas».

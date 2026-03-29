@@ -1,0 +1,17 @@
+2. MATRICULACIÓN_ESTUDIANTES_REGULARES: 
+
+  MATRICULACIÓN PARA ESTUDIANTES REGULARES
+
+  CRONOGRAMA DE INSCRIPCIÓN
+
+  Para la matriculación se debe seguir los siguientes pasos:
+
+  PASO 1.- El estudiante debe ingresar a la aplicación web universitarios.usfx.bo buscar en el menú de la izquierda la opción MATRICULARME, generando el importe que debe depositar o transferir a la cuenta de la Universidad, por concepto de matrícula.
+
+  PASO 2.- El estudiante debe realizar un depósito a la cuenta de la Universidad, BANCO UNIÓN CUENTA No 1-33340493, Titular de la Cuenta UMSFX – REC. PROPIOS – MATRICULAS UNIVERSITARIAS; también puede realizar el depósito mediante QR generado, ingresando a la aplicación web universitarios.usfx.bo.
+
+  PASO 3.- Efectuado el depósito bancario, el estudiante, debe ingresar nuevamente a la Página Web: universitarios.usfx.bo , buscar en el menú de la izquierda la opción MATRICULARME y llenar los campos correspondientes al depósito bancario o pago por QR.
+
+  ♦ En caso de depósito bancario, debe registrar el número de Depósito Bancario y se le mostraran los datos del depósito para su posterior matriculación. Si no se encuentra el número de depósito, verifique que el número este correctamente escrito o espere a que se actualicen los datos del banco, puede tardar hasta 4 horas en algunos casos.
+
+  ♦ En caso de haber generado el código QR para realizar el depósito, se recomienda hacer uso del mismo durante las primeras 24 hrs. para evitar retrasos en la habilitación e impresión de su matrícula.
