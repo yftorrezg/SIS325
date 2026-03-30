@@ -13,9 +13,9 @@ import {
 
 const EMPTY_TRAMITE = {
   code: '', name: '', description: '', category: '', duration_days: '', cost: 0,
-  applies_to: 'all', order_index: 0, icon: '',
+  applies_to: 'all', order_index: 0, icon: '', is_active: true,
   office_location: '', contact_info: '', cost_details: '', duration_details: '',
-  web_system_url: '', web_instructions: '',
+  web_system_url: '', web_instructions: '', video_tutorial_url: '',
 }
 
 const EMPTY_REQ = {
@@ -84,7 +84,7 @@ function TramiteModal({ tramite, onClose, onSaved }) {
   const tabs = [
     { id: 'basic', label: 'Información General' },
     { id: 'aspectos', label: 'Ubicación / Contacto / Costo' },
-    { id: 'web', label: 'Sistema Web' },
+    { id: 'web', label: 'Sistema Web / Video' },
   ]
 
   return (
@@ -140,6 +140,17 @@ function TramiteModal({ tramite, onClose, onSaved }) {
           <Field label="Descripción" full>
             <textarea className={ta} rows={3} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Descripción general del trámite..." />
           </Field>
+          <div className="col-span-2 flex items-center gap-3 pt-1">
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-blue-600"
+                checked={form.is_active ?? true}
+                onChange={e => set('is_active', e.target.checked)}
+              />
+              <span className="font-medium text-gray-700">Trámite activo (visible para estudiantes)</span>
+            </label>
+          </div>
         </div>
       )}
 
@@ -166,8 +177,18 @@ function TramiteModal({ tramite, onClose, onSaved }) {
             <input className={inp} value={form.web_system_url} onChange={e => set('web_system_url', e.target.value)} placeholder="https://universitarios.usfx.bo" />
           </Field>
           <Field label="📋 Instrucciones paso a paso en el sistema web" full>
-            <textarea className={ta} rows={6} value={form.web_instructions} onChange={e => set('web_instructions', e.target.value)} placeholder="1. Ingresá a...\n2. Menú...\n3. ..." />
+            <textarea className={ta} rows={5} value={form.web_instructions} onChange={e => set('web_instructions', e.target.value)} placeholder="1. Ingresá a...\n2. Menú...\n3. ..." />
           </Field>
+          <Field label="🎥 URL del video tutorial (YouTube, TikTok, etc.)" full>
+            <input className={inp} value={form.video_tutorial_url} onChange={e => set('video_tutorial_url', e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
+          </Field>
+          {form.video_tutorial_url && (
+            <div className="text-xs text-blue-600">
+              <a href={form.video_tutorial_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-800">
+                ↗ Verificar enlace del video
+              </a>
+            </div>
+          )}
         </div>
       )}
 
@@ -341,23 +362,27 @@ export default function TramitesManager() {
   const [editingTramite, setEditingTramite] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [requirementsFor, setRequirementsFor] = useState(null)
+  const [showInactive, setShowInactive] = useState(true)
 
   const load = useCallback(() => {
-    tramiteService.list().then(r => setTramites(r.data)).finally(() => setLoading(false))
+    tramiteService.list({ include_inactive: true }).then(r => setTramites(r.data)).finally(() => setLoading(false))
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  const handleDelete = async (t) => {
-    if (!confirm(`¿Desactivar "${t.name}"?`)) return
+  const handleToggleActive = async (t) => {
+    const action = t.is_active ? 'desactivar' : 'activar'
+    if (!confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} "${t.name}"?`)) return
     try {
-      await tramiteService.delete(t.id)
-      toast.success('Trámite desactivado')
+      await tramiteService.update(t.id, { is_active: !t.is_active })
+      toast.success(`Trámite ${t.is_active ? 'desactivado' : 'activado'}`)
       load()
     } catch {
-      toast.error('Error al eliminar')
+      toast.error('Error al actualizar')
     }
   }
+
+  const visibleTramites = showInactive ? tramites : tramites.filter(t => t.is_active)
 
   return (
     <div>
@@ -366,12 +391,23 @@ export default function TramitesManager() {
           <h1 className="text-2xl font-bold text-gray-900">Gestión de Trámites</h1>
           <p className="text-sm text-gray-500 mt-0.5">Administrá los trámites, sus campos por aspecto y los requisitos paso a paso</p>
         </div>
-        <button
-          onClick={() => { setEditingTramite(null); setShowEditModal(true) }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <PlusIcon className="w-4 h-4" /> Nuevo trámite
-        </button>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none text-gray-600">
+            <input
+              type="checkbox"
+              className="w-4 h-4 accent-blue-600"
+              checked={showInactive}
+              onChange={e => setShowInactive(e.target.checked)}
+            />
+            Mostrar inactivos
+          </label>
+          <button
+            onClick={() => { setEditingTramite(null); setShowEditModal(true) }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <PlusIcon className="w-4 h-4" /> Nuevo trámite
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -389,9 +425,16 @@ export default function TramitesManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {tramites.map(t => (
-                <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-800">{t.name}</td>
+              {visibleTramites.map(t => (
+                <tr key={t.id} className={`hover:bg-gray-50 transition-colors ${!t.is_active ? 'opacity-60 bg-gray-50' : ''}`}>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-800">{t.name}</span>
+                      {!t.is_active && (
+                        <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">Inactivo</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <code className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{t.code}</code>
                   </td>
@@ -417,11 +460,13 @@ export default function TramitesManager() {
                         <PencilIcon className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(t)}
-                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Desactivar trámite"
+                        onClick={() => handleToggleActive(t)}
+                        className={`p-1.5 rounded-lg transition-colors ${t.is_active
+                          ? 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                          : 'text-green-600 hover:text-green-800 hover:bg-green-50'}`}
+                        title={t.is_active ? 'Desactivar trámite' : 'Activar trámite'}
                       >
-                        <TrashIcon className="w-4 h-4" />
+                        {t.is_active ? <TrashIcon className="w-4 h-4" /> : <ChevronUpIcon className="w-4 h-4" />}
                       </button>
                     </div>
                   </td>
@@ -429,8 +474,8 @@ export default function TramitesManager() {
               ))}
             </tbody>
           </table>
-          {tramites.length === 0 && (
-            <div className="text-center py-12 text-gray-400 text-sm">No hay trámites activos.</div>
+          {visibleTramites.length === 0 && (
+            <div className="text-center py-12 text-gray-400 text-sm">No hay trámites.</div>
           )}
         </div>
       )}

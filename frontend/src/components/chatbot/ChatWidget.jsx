@@ -144,7 +144,16 @@ export default function ChatWidget() {
             {messages.map((msg, i) => (
               <div key={i} className={clsx('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                 <div className={clsx('max-w-[88%] px-3 py-2 text-sm', msg.role === 'user' ? 'chat-user' : 'chat-bot')}>
-                  <ReactMarkdown className="prose prose-sm max-w-none prose-p:my-0.5 prose-ul:my-0.5 prose-li:my-0">
+                  <ReactMarkdown
+                    className="prose prose-sm max-w-none prose-p:my-0.5 prose-ul:my-0.5 prose-li:my-0"
+                    components={{
+                      a: ({ href, children }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
                     {msg.content}
                   </ReactMarkdown>
                 </div>

@@ -30,7 +30,7 @@ api.interceptors.response.use(
 )
 
 export const tramiteService = {
-  list: (params) => api.get('/tramites', { params }),
+  list: (params = {}) => api.get('/tramites', { params }),
   search: (q) => api.get('/tramites/search', { params: { q } }),
   getById: (id) => api.get(`/tramites/${id}`),
   create: (data) => api.post('/tramites', data),

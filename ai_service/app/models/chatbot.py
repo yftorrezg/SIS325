@@ -8,6 +8,7 @@
 No static templates — all responses come from the database.
 """
 from typing import Optional
+import asyncio
 import httpx
 from app.models.classifier import classifier_model
 from app.models.aspect_classifier import classify_aspect
@@ -53,11 +54,35 @@ NON_TRAMITE_INTENTS = set(NON_TRAMITE_RESPONSES.keys())
 CONFIDENCE_THRESHOLD = 0.15
 
 
+def _whatsapp_url(number: str, tramite_name: str) -> str:
+    """Build a wa.me URL with a pre-filled message."""
+    from urllib.parse import quote
+    clean = number.replace("+", "").replace(" ", "").replace("-", "")
+    msg = f"Hola, tengo consulta sobre el trámite de {tramite_name}."
+    return f"https://wa.me/{clean}?text={quote(msg)}"
+
+
+def _kardista_whatsapp_lines(kardistas: list, applies_to: str, tramite_name: str) -> str:
+    """Return markdown lines with WhatsApp button(s) for the relevant kardista(s)."""
+    lines = []
+    for k in kardistas:
+        wa = k.get("whatsapp", "")
+        if not wa:
+            continue
+        ktype = k.get("kardex_type", "")
+        if applies_to not in ("all", ktype):
+            continue
+        label = "Kardex Tecnológico" if ktype == "tecnologico" else "Kardex 6x"
+        url = _whatsapp_url(wa, tramite_name)
+        lines.append(f"📲 [Consultar por WhatsApp — {label}]({url})")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Dynamic response builder — uses live DB data, no hardcoded text
 # ---------------------------------------------------------------------------
 
-def _build_aspect_response(intent: str, aspect: str, tramite_data: dict, confidence: float) -> dict:
+def _build_aspect_response(intent: str, aspect: str, tramite_data: dict, confidence: float, kardistas: list = None) -> dict:
     """Build a rich Markdown response from DB data focused on the detected aspect."""
     name = tramite_data.get("name", intent)
     tramite_id = tramite_data.get("id")
@@ -99,6 +124,10 @@ def _build_aspect_response(intent: str, aspect: str, tramite_data: dict, confide
                 f"📍 Debés presentarte al **kardista de tu carrera** en la Facultad de Tecnología USFX.\n\n"
                 "Podés ver el contacto y ubicación en la sección **Kardistas** de la plataforma."
             )
+        if kardistas:
+            wa = _kardista_whatsapp_lines(kardistas, tramite_data.get("applies_to", "all"), name)
+            if wa:
+                parts.append(f"\n{wa}")
 
     elif aspect == "CONTACTO":
         contact = tramite_data.get("contact_info")
@@ -109,13 +138,17 @@ def _build_aspect_response(intent: str, aspect: str, tramite_data: dict, confide
                 f"📞 Para este trámite, contactá al **kardista de tu carrera**. "
                 "Podés ver el teléfono y horario en la sección **Kardistas** de esta plataforma."
             )
+        if kardistas:
+            wa = _kardista_whatsapp_lines(kardistas, tramite_data.get("applies_to", "all"), name)
+            if wa:
+                parts.append(f"\n{wa}")
 
     elif aspect == "SISTEMA_WEB":
         url = tramite_data.get("web_system_url")
         instructions = tramite_data.get("web_instructions")
         if url or instructions:
             if url:
-                parts.append(f"🌐 **Sistema web:** {url}\n")
+                parts.append(f"🌐 **Sistema web:** [{url}]({url})\n")
             if instructions:
                 parts.append(f"**Instrucciones paso a paso:**\n\n{instructions}")
         else:
@@ -190,6 +223,17 @@ def _build_aspect_response(intent: str, aspect: str, tramite_data: dict, confide
                 f"\n💬 Podés preguntarme por los **requisitos**, el **costo**, "
                 "el **proceso paso a paso**, el **plazo** o **dónde** realizarlo."
             )
+
+    # Append video tutorial link if available
+    video_url = tramite_data.get("video_tutorial_url")
+    if video_url:
+        parts.append(f"\n🎥 [Ver video tutorial]({video_url})")
+
+    # Append WhatsApp footer for aspects that don't already include it
+    if kardistas and aspect not in ("CONTACTO", "UBICACION"):
+        wa = _kardista_whatsapp_lines(kardistas, tramite_data.get("applies_to", "all"), name)
+        if wa:
+            parts.append(f"\n---\n{wa}")
 
     response = "\n\n".join(p for p in parts if p)
     return {
@@ -268,12 +312,17 @@ async def process_chat(
     if confidence < CONFIDENCE_THRESHOLD:
         return _fallback_response(intent, confidence)
 
-    # --- Fetch full tramite data from backend ---
+    # --- Fetch full tramite data and kardistas from backend ---
     tramite_data = None
+    kardistas = []
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            list_resp = await client.get(f"{settings.backend_url}/api/v1/tramites")
-            if list_resp.status_code == 200:
+            list_resp, kardistas_resp = await asyncio.gather(
+                client.get(f"{settings.backend_url}/api/v1/tramites"),
+                client.get(f"{settings.backend_url}/api/v1/kardistas"),
+                return_exceptions=True,
+            )
+            if not isinstance(list_resp, Exception) and list_resp.status_code == 200:
                 summary = next(
                     (t for t in list_resp.json() if t.get("code") == intent), None
                 )
@@ -281,10 +330,9 @@ async def process_chat(
                     detail_resp = await client.get(
                         f"{settings.backend_url}/api/v1/tramites/{summary['id']}"
                     )
-                    if detail_resp.status_code == 200:
-                        tramite_data = detail_resp.json()
-                    else:
-                        tramite_data = summary
+                    tramite_data = detail_resp.json() if detail_resp.status_code == 200 else summary
+            if not isinstance(kardistas_resp, Exception) and kardistas_resp.status_code == 200:
+                kardistas = kardistas_resp.json()
     except Exception:
         pass
 
@@ -315,4 +363,4 @@ async def process_chat(
             }
 
     # --- Layer 3b: Dynamic DB response ---
-    return _build_aspect_response(intent, aspect, tramite_data, confidence)
+    return _build_aspect_response(intent, aspect, tramite_data, confidence, kardistas)

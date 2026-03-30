@@ -22,7 +22,6 @@ TRAMITE_LABELS = [
     "TRAMITE_DIPLOMA_ACADEMICO",
     "TRAMITE_TITULO_PROVISION_NACIONAL",
     "TRAMITE_SIMULTANEO_DIPLOMA_PROVISION",
-    "TRAMITE_TITULACION",
     # Certificados y trámites académicos
     "SOLICITUD_CERTIFICADO_KARDEX",
     "SOLICITUD_CAMBIO_CARRERA",
@@ -59,6 +58,9 @@ KEYWORD_MAP: dict[str, list[str]] = {
         "diploma académico", "diploma academico", "sacar diploma", "trámite diploma",
         "requisitos diploma", "solvencia universitaria", "certificado conclusión",
         "terminé la carrera diploma", "obtener diploma",
+        "titulación", "titulacion", "graduarme", "proceso de graduación", "modalidad de titulación",
+        "tesis", "proyecto de grado", "examen de grado", "trabajo dirigido",
+        "terminé todas las materias graduación", "obtener título graduación",
     ],
     "TRAMITE_TITULO_PROVISION_NACIONAL": [
         "título provisión", "titulo provision", "provisión nacional", "título profesional",
@@ -67,11 +69,6 @@ KEYWORD_MAP: dict[str, list[str]] = {
     "TRAMITE_SIMULTANEO_DIPLOMA_PROVISION": [
         "simultáneo", "simultaneo", "diploma y título", "los dos", "ambos trámites",
         "diploma y provisión", "al mismo tiempo", "trámite simultáneo",
-    ],
-    "TRAMITE_TITULACION": [
-        "titulación", "titulacion", "graduarme", "proceso de graduación", "modalidad de titulación",
-        "tesis", "proyecto de grado", "examen de grado", "trabajo dirigido",
-        "terminé todas las materias graduación", "obtener título graduación",
     ],
     "SOLICITUD_CERTIFICADO_KARDEX": [
         "kardex", "certificado de notas", "historial académico", "certificado académico",

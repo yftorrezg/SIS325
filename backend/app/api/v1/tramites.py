@@ -16,9 +16,12 @@ router = APIRouter()
 async def list_tramites(
     category: Optional[str] = None,
     applies_to: Optional[str] = None,
+    include_inactive: bool = False,
     db: AsyncSession = Depends(get_db)
 ):
-    query = select(Tramite).where(Tramite.is_active == True).order_by(Tramite.order_index)
+    query = select(Tramite).order_by(Tramite.order_index)
+    if not include_inactive:
+        query = query.where(Tramite.is_active == True)
     if category:
         query = query.where(Tramite.category == category)
     if applies_to:

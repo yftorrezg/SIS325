@@ -40,6 +40,7 @@ class TramiteBase(BaseModel):
     duration_details: Optional[str] = None
     web_system_url: Optional[str] = None
     web_instructions: Optional[str] = None
+    video_tutorial_url: Optional[str] = None
 
 
 class TramiteCreate(TramiteBase):
@@ -62,6 +63,7 @@ class TramiteUpdate(BaseModel):
     duration_details: Optional[str] = None
     web_system_url: Optional[str] = None
     web_instructions: Optional[str] = None
+    video_tutorial_url: Optional[str] = None
 
 
 class TramiteOut(TramiteBase):
@@ -82,4 +84,6 @@ class TramiteSummary(BaseModel):
     cost: float
     applies_to: str
     icon: Optional[str]
+    is_active: bool = True
+    video_tutorial_url: Optional[str] = None
     model_config = {"from_attributes": True}

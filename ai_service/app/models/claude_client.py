@@ -103,7 +103,7 @@ def _build_tramite_context(tramite_data: Optional[dict], aspect: str = "GENERAL"
     if aspect in ("CONTACTO", "GENERAL", "UBICACION"):
         if tramite_data.get("contact_info"):
             lines.append(f"Contacto: {tramite_data['contact_info']}")
-    if aspect in ("SISTEMA_WEB", "GENERAL", "PASOS"):
+    if aspect in ("SISTEMA_WEB", "GENERAL"):
         if tramite_data.get("web_system_url"):
             lines.append(f"Sistema web: {tramite_data['web_system_url']}")
         if tramite_data.get("web_instructions"):

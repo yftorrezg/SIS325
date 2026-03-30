@@ -151,13 +151,38 @@ def _train_sync(
 
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
+    # Class weights to handle imbalanced dataset (e.g., 461 samples vs 15)
+    from sklearn.utils.class_weight import compute_class_weight
+    unique_classes = np.unique(labels_train)
+    cw = compute_class_weight("balanced", classes=unique_classes, y=labels_train)
+    # Build full-length weight array (one per label in TRAMITE_LABELS)
+    full_weights = np.ones(len(TRAMITE_LABELS))
+    for cls_idx, w in zip(unique_classes, cw):
+        full_weights[cls_idx] = w
+    class_weights_tensor = torch.tensor(full_weights, dtype=torch.float)
+
     class ProgressCallback(TrainerCallback):
         def on_epoch_end(self, args, state, control, **kwargs):
             if progress_callback:
                 p = 0.2 + (state.epoch / epochs) * 0.6
                 progress_callback(p, f"Época {int(state.epoch)}/{epochs} completada")
 
-    trainer = Trainer(
+    class WeightedTrainer(Trainer):
+        def __init__(self, class_weights, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._class_weights = class_weights
+
+        def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+            labels = inputs.get("labels")
+            outputs = model(**inputs)
+            logits = outputs.get("logits")
+            weights = self._class_weights.to(logits.device)
+            loss_fct = torch.nn.CrossEntropyLoss(weight=weights)
+            loss = loss_fct(logits.view(-1, model.config.num_labels), labels.view(-1))
+            return (loss, outputs) if return_outputs else loss
+
+    trainer = WeightedTrainer(
+        class_weights=class_weights_tensor,
         model=model,
         args=training_args,
         train_dataset=train_ds,

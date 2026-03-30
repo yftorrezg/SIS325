@@ -31,21 +31,21 @@ TRAMITES = [
         "name": "Trámite de Matrícula - Alumno Regular",
         "description": "Proceso de inscripción para estudiantes que ya cursaron al menos un semestre en la facultad.",
         "category": "matricula",
-        "duration_days": "en qr es instantáneo, con depósito en banco union de 1 a 3 días hábiles, maximo 2 semanas",
-        "cost": "Trámite matricula 85 bs Otros aportes 17.5 bs QR 0.5 bs Total 103.5 bs.",
+        "duration_days": 3,
+        "cost": 103.50,
         "applies_to": "all",
         "order_index": 1,
         "icon": "academic-cap",
         "office_location": "ve con tu Kardista, aunque la matricula es: pago QR o trasnferencia",
         "contact_info": "Kardista Tecnológico: Juan Pérez, WhatsApp +591 70123456 | Kardista 6x: María López, WhatsApp +591 72345678",
-        "cost_details": "Te lo indica el sistema al generar el importe a pagar (link: universitarios.usfx.bo, menu matricula), depende de tu situación, doble carrera, si tienes materias reprobadas, etc",
+        "cost_details": "Bs. 85 matrícula + Bs. 17.5 aportes + Bs. 0.5 QR = Total Bs. 103.5. El sistema en universitarios.usfx.bo te indica el importe exacto (puede variar según tu situación: doble carrera, materias reprobadas, etc).",
         "duration_details": "de 1 dia a 3 días hábiles desde el pago por QR o Transferencia en el Banco Union",
         "web_system_url": "https://universitarios.usfx.bo",
         "web_instructions": "1. Ingresá a universitarios.usfx.bo con tu usuario y contraseña. /n 2. Menú Matrículas → Matricularme. /n 3. Generá el importe a pagar. /n 4. Pagá con depósito en Banco Unión Cta. 1-33340493 (UMSFX – REC. PROPIOS – MATRÍCULAS) o con QR. /n 5. Registrá el número de depósito en el sistema. El depósito puede tardar hasta 4 horas en reflejarse.",
         "requirements": [
-            {"step_number": 1, "title": "Venerar importe", "description": "Ingresar a universitarios.usfx.bo (menú "MATRICULARME") para obtener el monto a depositar/transferir.", "is_mandatory": True},
+            {"step_number": 1, "title": "Generar importe", "description": "Ingresar a universitarios.usfx.bo (menú MATRICULARME) para obtener el monto a depositar/transferir.", "is_mandatory": True},
             {"step_number": 2, "title": "Realizar pago", "description": "Depositar a la cuenta universitaria del BANCO UNIÓN No 1-33340493 (Titular: UMSFX – REC. PROPIOS – MATRICULAS UNIVERSITARIAS) o pagar mediante el QR generado en universitarios.usfx.bo.", "is_mandatory": True},
-            {"step_number": 3, "title": "Registrar pago", "description": "Reingresar a universitarios.usfx.bo (menú "MATRICULARME") para completar los datos del depósito bancario o pago QR", "deposito_bancario": "Registrar el número. Si no aparece, verificar la escritura o esperar la actualización (máximo 4 horas)","deposito_QR": "Se recomienda usar el código en las primeras 24 horas para evitar retrasos en la habilitación e impresión de la matrícula.", "is_mandatory": True},
+            {"step_number": 3, "title": "Registrar pago", "description": "Reingresar a universitarios.usfx.bo (menú MATRICULARME) para completar los datos del depósito bancario o pago QR. Depósito: registrar el número (puede tardar hasta 4 horas en reflejarse). QR: usar el código en las primeras 24 horas.", "is_mandatory": True},
         ],
         "video_tutorial_url": "https://www.tiktok.com/@usfx.oficial/video/7469895244318870790",
     },
@@ -63,8 +63,7 @@ TRAMITES = [
         "cost_details": "Trámite en línea — el pago de matrícula se realiza vía sistema web universitarios.usfx.bo QR o depósito bancario en Banco Unión Cta. 1-33340493",
         "duration_details": "de 1 a 3 días hábiles para completar la matriculacion, maximo 2 semanas dependiendo del tiempo de pago y validación del mismo",
         "web_system_url": "https://admision.usfx.bo",
-        "web_instructions": " Subir Documentos Digitales (https://admision.usfx.bo/): Diploma de Bachiller legalizado por SEDUCA o autentificado por la USFX (anverso y reverso). Libreta/Certificado de egreso de sexto de secundaria (o libreta legalizada si no tiene Diploma). Cédula de identidad (anverso y reverso). Fotografía tipo carnet con fondo blanco. Incluir nombre completo, celular vigente y Carrera de admisión.
-",
+        "web_instructions": "Subir Documentos Digitales (https://admision.usfx.bo/): Diploma de Bachiller legalizado por SEDUCA o autentificado por la USFX (anverso y reverso). Libreta/Certificado de egreso de sexto de secundaria (o libreta legalizada si no tiene Diploma). Cédula de identidad (anverso y reverso). Fotografía tipo carnet con fondo blanco. Incluir nombre completo, celular vigente y Carrera de admisión.",
         "requirements": [ 
           {"step_number": 1, "title": "Subir Documentos Digitales (https://admision.usfx.bo/)", "description": "Diploma de Bachiller legalizado por SEDUCA o autentificado por la USFX (anverso y reverso). Libreta/Certificado de egreso de sexto de secundaria (o libreta legalizada si no tiene Diploma). Cédula de identidad (anverso y reverso). Fotografía tipo carnet con fondo blanco. Incluir nombre completo, celular vigente y Carrera de admisión.", "is_mandatory": True},
           {"step_number": 2, "title": "Verificación y Generación de Carnet Universitario (Servicios Académicos)", "description": "Servicios Académicos verifica la documentación y genera el número de Carnet Universitario (Vigente o Provisional).", "is_mandatory": True},
@@ -164,12 +163,6 @@ TRAMITES = [
         "web_system_url": None,
         "web_instructions": None,
         "requirements": [
-          """ 
-          Escribir una carta al director de carrera para cambio de horarios o reprogramacion de materias
-          En la carta debe indicar: motivos justificados para la reprogramación
-          Adjuntar documentación de respaldo si corresponde (certificados médicos, constancias laborales, etc).
-          Presentar la solicitud al kardista de tu carrera para su revisión y seguimiento e implementacion de la reprogramacion.
-          """
           {"step_number": 1, "title": "Solicitud escrita al director de carrera", "description": "Carta dirigida al director de carrera indicando los motivos para la reprogramación y adjuntando documentación de respaldo si corresponde (certificados médicos, constancias laborales, etc).", "document_name": "Carta de solicitud", "is_mandatory": True},
           {"step_number": 2, "title": "Presentar solicitud al kardista", "description": "Entregar la carta al kardista de tu carrera para su revisión y seguimiento", "is_mandatory": True},
           {"step_number": 3, "title": "Reprogramación", "description": "El kardista va a implementar la reprogramación si sigue el plazo de reprogramaciones o es aprobada.", "is_mandatory": True},
@@ -263,8 +256,7 @@ TRAMITES = [
         "cost_details": "Bs. 1800 aprox. — pagar en Caja de la Facultad al presentar los documentos. Incluye papel valorado y valores universitarios.",
         "duration_details": "Hasta 30 días hábiles desde la presentación completa de documentos en Caja. La Solvencia Universitaria tiene validez de solo 48 horas desde la primera firma.",
         "web_system_url": "https://universitarios.usfx.bo",
-        "web_instructions": "Acceda al Sistema SUNIVER (https://universitarios.usfx.bo/Cuenta/security/login) e inicie sesión. Diríjase a la sección Trámites (menú lateral izquierdo en PC o superior en móvil). Dentro de Trámites Académicos, seleccione la opción para la solicitud de su Diploma Académico. El sistema preguntará: «¿Desea obtener simultáneamente el Diploma Académico y el Título en Provisión Nacional? Tenga en cuenta los costos asociados con ambos trámites.». Seleccione el botón según su necesidad. Revise los requisitos presentados por el sistema; una vez iniciado el trámite, no podrá realizar trámites simultáneos. Al iniciar, el sistema validará sus datos académicos. Si son correctos, continuará. Si hay errores, deberá subsanar las excepciones siguiendo las instrucciones. Si su carrera tiene varias menciones, elija el título específico que necesita. Seleccione los requisitos correspondientes (esto es una declaración de cumplimiento). Revise cuidadosamente los datos declarados, acepte y continúe. El sistema generará el formulario y la carta de solicitud (imprimir en hoja tamaño oficio). Presente estos documentos en la Caja designada para obtener los valores asociados al trámite.
-",
+        "web_instructions": "Acceda al Sistema SUNIVER (https://universitarios.usfx.bo/Cuenta/security/login) e inicie sesión. Diríjase a la sección Trámites. Dentro de Trámites Académicos, seleccione la solicitud de Diploma Académico. El sistema preguntará si desea obtener simultáneamente el Título en Provisión Nacional. Revise los requisitos, el sistema validará sus datos. Si hay errores, subsánelos. Seleccione los requisitos (declaración de cumplimiento). El sistema generará el formulario y la carta (imprimir en hoja oficio). Presente en Caja para obtener los valores del trámite.",
         "requirements": [
             {"step_number": 1, "title": "Fotocopia CI vigente o Pasaporte legalizado (extranjeros)", "document_name": "Fotocopia CI", "is_mandatory": True},
             {"step_number": 2, "title": "Carnet universitario vigente", "document_name": "Carnet universitario", "is_mandatory": True},
@@ -296,8 +288,7 @@ TRAMITES = [
         "cost_details": "Bs. 1800.00 aprox hasta 5000.00. bs dependiendo de la carrera — pagar en Caja de la Facultad. Incluye valores universitarios.",
         "duration_details": "Hasta 30 días hábiles desde la presentación en Caja. El título final es emitido por Director de Carrera USFX.",
         "web_system_url": "https://si2.usfx.bo/suniver",
-        "web_instructions": "Ingrese y acceda a SUNIVER (https://si2.usfx.bo/suniver/web/Cuenta/security/login). Vaya a Trámites y seleccione la solicitud de Diploma Académico. Elija si desea el Diploma Académico y Título en Provisión Nacional simultáneamente (considere costos). Lea los requisitos. No podrá iniciar otros trámites simultáneos. El sistema validará sus datos; si hay errores, subsánelos. Si aplica, seleccione la mención/título específico de su carrera. Seleccione (declare cumplimiento) los requisitos. Revise, acepte y continúe. Imprima el formulario y la carta de solicitud (hoja oficio) y preséntelos en Caja para obtener los valores universitarios.
-",
+        "web_instructions": "Ingrese a SUNIVER (https://si2.usfx.bo/suniver/web/Cuenta/security/login). Vaya a Trámites y seleccione la solicitud de Diploma Académico. Elija si desea el Diploma y Título en Provisión Nacional simultáneamente. El sistema validará sus datos; si hay errores, subsánelos. Seleccione la mención/título específico si aplica. Declare cumplimiento de requisitos. Imprima el formulario y la carta (hoja oficio) y preséntelos en Caja.",
         "requirements": [
             {"step_number": 1, "title": "Fotocopia legalizada del Diploma Académico", "document_name": "Diploma Académico legalizado", "is_mandatory": True, "notes": "Debe estar legalizado por la USFX antes de tramitar el título"},
             {"step_number": 2, "title": "Fotocopia simple del Certificado de Nacimiento", "document_name": "Copia Certificado Nacimiento", "is_mandatory": True},
@@ -358,8 +349,7 @@ TRAMITES = [
         "office_location": "El proceso es completamente en línea. Si hay problemas con el sistema, consultá con tu kardista o el soporte técnico de SUNIVER.",
         "contact_info": "Soporte Tecnico dtic.soporte@usfx.bo | averiguar, telegram info sunniver",
         "cost_details": "El proceso web en sí es gratuito. El pago de matrícula se realiza vía depósito bancario o QR según el monto generado por el sistema.",
-        "duration_details": "El proceso es al instante en línea por QR. El depósito bancario puede tardar hasta 4 horas en reflejarse en el sistema. y maximo 1 o 2 semanas para que se actualice con la matrícula reflejada. Fecha inicio de matriculacion: fuera de plazo. Fecha fin: fuera de plazo.
-        ",
+        "duration_details": "El proceso es al instante en línea por QR. El depósito bancario puede tardar hasta 4 horas en reflejarse en el sistema, y máximo 1-2 semanas para que se actualice con la matrícula reflejada.",
         "web_system_url": "https://universitarios.usfx.bo",
         "web_instructions": "1. Ingresá a universitarios.usfx.bo con tu usuario y contraseña SUNIVER. 2. Menú Matrículas → Matricularme. 3. El sistema generará el importe a pagar. 4. Elegí modalidad: Depósito en Banco Unión Cta. 1-33340493 (UMSFX – REC. PROPIOS – MATRÍCULAS) o Pago con QR (confirmación inmediata). 5. Si pagaste con depósito, registrá el número de papeleta en el sistema. 6. Verificá en Matrículas → Mis Matrículas.",
         "requirements": [
@@ -392,13 +382,13 @@ TRAMITES = [
         "web_instructions": "1. Ingresá a si2.usfx.bo/suniver con tu usuario y contraseña. 2. Verificá tener matrícula activa primero. 3. Menú Programaciones → Programarme. 4. Si tu carrera tiene programación automática: el sistema asigna las materias según tu avance. 5. Si es manual: seleccioná las materias habilitadas según tu kardex. 6. Confirmá y verificá en Programaciones → Mis Programaciones.",
         "requirements": [
             {"step_number": 1, "title": "Matrícula vigente del semestre actual", "description": "Debés estar matriculado antes de poder programar materias", "is_mandatory": True},
-            {"step_number": 2, "title": "Acceso al Sistema", "description": "Ingresa a https://si2.usfx.bo/suniver/web/Cuenta/security/login con tu usuario y contraseña.": True},
+            {"step_number": 2, "title": "Acceso al Sistema", "description": "Ingresa a https://si2.usfx.bo/suniver/web/Cuenta/security/login con tu usuario y contraseña.", "is_mandatory": True},
             {"step_number": 3, "title": "Iniciar Programación", "description": "En el menú derecho, selecciona «Programaciones» y luego «Programarme».", "is_mandatory": True},
             {"step_number": 4, "title": "Tipo de Programación", "description": "Automática: Si tu carrera lo permite, el sistema te guiará paso a paso. Manual: Consulta el kardex de tu facultad para saber qué materias puedes programar según tu avance académico.", "is_mandatory": True},
             {"step_number": 5, "title": "Finalización", "description": "Revisa cuidadosamente la información ingresada y confirma tu programación.", "is_mandatory": True},
             {"step_number": 6, "title": "Verificación", "description": "Corrobora que tu programación se haya registrado correctamente en «Programaciones» → «Mis Programaciones». Si hay errores, contacta a tu kardista o soporte técnico de SUNIVER.", "is_mandatory": True},
         ],
-        {"video_tutorial_url": "https://www.tiktok.com/@ce_chat_gpt_usfx/video/7534737440221760774?q=programacion%20usfx&t=1774725843810"}
+        "video_tutorial_url": "https://www.tiktok.com/@ce_chat_gpt_usfx/video/7534737440221760774?q=programacion%20usfx&t=1774725843810",
     },
     {
         "code": "SEGURO_SOCIAL_UNIVERSITARIO",
@@ -417,14 +407,6 @@ TRAMITES = [
         "web_system_url": "https://ssu-sucre.org/ficha",
         "web_instructions": "1. Ingresá a ssu-sucre.org/ficha. 2. Clic en EMITIR FICHA ESTUDIANTIL. 3. Ingresá tu número de carnet universitario y contraseña SUNIVER. 4. Seleccioná la fecha de consulta deseada. 5. Elegí la especialidad médica (hay 18 disponibles). 6. Seleccioná el horario disponible y confirmá. 7. Guardá o imprimí tu ficha. 8. Presentate puntualmente con el Carnet Universitario.",
         "requirements": [
-          """ 
-                    Acceda a la web del Seguro Social Universitario (https://www.ssu-sucre.org/inicio) o directamente al enlace de fichas (https://www.ssu-sucre.org/ficha).
-                    Haga clic en «Adquirir ficha» y luego en <<EMITIR FICHA ESTUDIANTIL>>.
-                    Complete el formulario con sus datos, incluyendo Carnet Universitario, Contraseña y la Fecha de Consulta.
-                    Elija una de las 18 especialidades.
-                    Seleccione el horario disponible y confirme su cita.
-  
-          """
             {"step_number": 1, "title": "Página web", "description": "Acceda a la web del Seguro Social Universitario (https://www.ssu-sucre.org/inicio) o directamente al enlace de fichas (https://www.ssu-sucre.org/ficha).", "is_mandatory": True},
             {"step_number": 2, "title": "Adquirir ficha", "description": "Haga clic en «Adquirir ficha» y luego en <<EMITIR FICHA ESTUDIANTIL>>.", "is_mandatory": True},
             {"step_number": 3, "title": "Completar formulario", "description": "Complete el formulario con sus datos, incluyendo Carnet Universitario, Contraseña y la Fecha de Consulta.", "is_mandatory": True},
@@ -442,6 +424,14 @@ TRAMITES = [
 async def seed():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Add new columns to existing tables if upgrading from an older schema
+        try:
+            from sqlalchemy import text
+            await conn.execute(text(
+                "ALTER TABLE tramites ADD COLUMN IF NOT EXISTS video_tutorial_url VARCHAR(500)"
+            ))
+        except Exception:
+            pass
 
     async with AsyncSessionLocal() as db:
         # Check if already seeded

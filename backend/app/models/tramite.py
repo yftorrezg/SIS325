@@ -30,6 +30,7 @@ class Tramite(Base):
     duration_details: Mapped[str] = mapped_column(Text, nullable=True)          # PLAZO aspect (extra timing info)
     web_system_url: Mapped[str] = mapped_column(String(255), nullable=True)     # SISTEMA_WEB aspect
     web_instructions: Mapped[str] = mapped_column(Text, nullable=True)          # SISTEMA_WEB aspect (step-by-step)
+    video_tutorial_url: Mapped[str] = mapped_column(String(500), nullable=True) # VIDEO tutorial link
 
     requirements: Mapped[list["Requirement"]] = relationship("Requirement", back_populates="tramite", order_by="Requirement.step_number", cascade="all, delete-orphan")
     requests: Mapped[list["StudentRequest"]] = relationship("StudentRequest", back_populates="tramite")
@@ -41,9 +42,9 @@ class Requirement(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tramite_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tramites.id", ondelete="CASCADE"))
     step_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
-    document_name: Mapped[str] = mapped_column(String(255), nullable=True)
+    document_name: Mapped[str] = mapped_column(String(500), nullable=True)
     is_mandatory: Mapped[bool] = mapped_column(Boolean, default=True)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)

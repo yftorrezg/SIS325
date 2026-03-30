@@ -12,6 +12,11 @@ async def lifespan(app: FastAPI):
     # Create all tables on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    # Seed tramites and training samples if DB is empty
+    from app.seed import seed
+    from app.seed_training import seed_training
+    await seed()
+    await seed_training()
     yield
     await engine.dispose()
 
